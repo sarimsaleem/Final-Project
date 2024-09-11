@@ -1,0 +1,25 @@
+:where(.css-dev-only-do-not-override-14i19y2).ant-layout .ant-layout-sider-children{
+    height: 100vh;
+}
+.header{
+    display: flex;
+}
+/* Ensure there is enough space for the images */
+.product-content {
+    padding: 24px;
+    min-height: 280px;
+  }
+  
+  .image-gallery {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+  
+  .product-image {
+    width: 100px; /* Adjust size as needed */
+    height: 100px; /* Adjust size as needed */
+    object-fit: cover;
+    border-radius: 4px;
+  }
+    

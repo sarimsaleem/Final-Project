@@ -1,0 +1,17 @@
+/* CategoryModal.css */
+.custom-upload .ant-upload-list-item {
+    border: none; /* Remove border */
+    background: none; /* Remove background */
+    box-shadow: none; /* Remove shadow if any */
+  }
+  
+  .custom-upload .ant-upload-list-item-thumbnail {
+    background: none; /* Remove thumbnail background */
+  }
+  
+  .custom-upload .ant-upload-list-item .ant-upload-list-item-info {
+    display: none; /* Hide item info if desired */
+  }
+  :where(.css-dev-only-do-not-override-14i19y2).ant-table-wrapper tr.ant-table-expanded-row >th, :where(.css-dev-only-do-not-override-14i19y2).ant-table-wrapper tr.ant-table-expanded-row:hover >th, :where(.css-dev-only-do-not-override-14i19y2).ant-table-wrapper tr.ant-table-expanded-row >td, :where(.css-dev-only-do-not-override-14i19y2).ant-table-wrapper tr.ant-table-expanded-row:hover >td{
+    background: none;
+  }

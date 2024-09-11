@@ -1,0 +1,55 @@
+.footer {
+    background: black;
+    padding: 40px 0;
+    display: flex;
+}
+
+.li-head {
+    color: white;
+    list-style: none;
+    font-size: 25px;
+    font-weight: 600;
+    display: flex;
+    margin-bottom: 25px;
+}
+
+.li-text {
+    color: white;
+    list-style: none;
+
+}
+
+.icons-p li {
+    margin:4px 0 0;
+    list-style: none;
+    color: white;
+    font-size: 22px;
+}
+
+span {
+    font-weight: 600;
+}
+
+.second-hr {
+    border: 1px solid rgb(248, 244, 244);
+    margin: 30px auto;
+    opacity: .5;
+    /* width: 100%; */
+}
+
+.copyText {
+    color: white;
+    font-size: 18px;
+    margin: 0;
+}
+
+ul {
+    margin: 0 15px;
+    padding: 0;
+}
+.column{
+    padding: 0;
+}
+.first-ul{
+    margin-left: 0;
+}
