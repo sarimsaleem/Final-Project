@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Button, Layout, Menu, Space, Table, theme } from 'antd';
 import {
@@ -46,14 +47,14 @@ const Product = () => {
         const flatSubcategories = categoriesData.reduce((acc, category) => {
           return [...acc, ...category.subCategories.map((sub) => ({
             ...sub,
-            categoryId: category.key, // Associate subcategory with its parent category
+            category: category, // Associate subcategory with its parent category
           }))];
         }, []);
         
         setCategories(categoriesData);
-        console.log(categoriesData,"categoriesData")
+        // console.log(categoriesData,"categoriesData")
         setSubcategories(flatSubcategories);
-        console.log(flatSubcategories,"flatSubcategories")
+        // console.log(flatSubcategories,"category")
         // setCategoryLookup(categoryLookup); // Set category lookup table
         // console.log(categoryLookup,"categoryLookup")
       } catch (error) {

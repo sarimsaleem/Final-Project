@@ -1,9 +1,21 @@
-import { db, imgDB } from '../../Componentss/firebase/Firebase'; 
-import { addDoc, doc, updateDoc, collection, getDocs, query, where } from 'firebase/firestore';
+import { db, imgDB } from '../../Componentss/firebase/Firebase';
+import { addDoc, doc, updateDoc, collection, getDocs, getDoc, deleteDoc, query, where } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 
 const vendorCollectionRef = collection(db, 'vendors');
 const categoryCollectionRef = collection(db, 'category');
+
+// Function to handle image uploads
+const uploadImages = async (images) => {
+  const imageUrls = [];
+  for (const image of images) {
+    const imageRef = ref(imgDB, `images/${image.name}`);
+    await uploadBytes(imageRef, image);
+    const url = await getDownloadURL(imageRef);
+    imageUrls.push(url);
+  }
+  return imageUrls;
+};
 
 // Function to add a new vendor
 export const addVendor = async (vendor) => {
@@ -19,8 +31,8 @@ export const addVendor = async (vendor) => {
 export const fetchVendors = async () => {
   try {
     const querySnapshot = await getDocs(vendorCollectionRef);
-    const vendors = querySnapshot.docs.map((doc, index) => ({
-      key: index + 1,
+    const vendors = querySnapshot.docs.map((doc) => ({
+      id: doc.id, // Ensure the id field is included
       ...doc.data(),
     }));
     return vendors;
@@ -30,17 +42,47 @@ export const fetchVendors = async () => {
   }
 };
 
-// Function to handle image uploads
-const uploadImages = async (images) => {
-  const imageUrls = [];
-  for (const image of images) {
-    const imageRef = ref(imgDB, `images/${image.name}`);
-    await uploadBytes(imageRef, image);
-    const url = await getDownloadURL(imageRef);
-    imageUrls.push(url);
+// Function to delete vendors
+export const deleteVendor = async (vendorId) => {
+  try {
+    // Debugging step: Check if vendorId is correctly passed
+    if (!vendorId) {
+      console.error('Error: vendorId is undefined or invalid.');
+      return;
+    }
+
+    console.log(`Attempting to delete vendor with ID: ${vendorId}`);
+
+    // Correctly delete the document using the vendorId
+    await deleteDoc(doc(db, 'vendors', vendorId));
+    console.log('Vendor deleted successfully');
+  } catch (error) {
+    console.error('Error deleting vendor:', error);
   }
-  return imageUrls;
+}
+
+// update Vendor 
+export const updateVendor = async (vendorId, updatedData) => {
+  try {
+    const vendorRef = doc(collection(db, 'vendors'), vendorId); // Reference to the specific vendor document
+    await updateDoc(vendorRef, updatedData); // Update the document with new data
+    console.log('Vendor updated successfully');
+  } catch (error) {
+    console.error('Error updating vendor:', error);
+    throw error;
+  }
 };
+
+export const updateCategory = async (categoryId, updatedData) => {
+  try {
+    const categoryRef = doc(collection(db, "category"), categoryId)
+    await updateDoc(categoryRef, updatedData)
+    console.log('Category updated successfully');
+  } catch (error) {
+    console.error('Category updating vendor:', error);
+    throw error
+  }
+}
 
 // Function to save category
 export const saveCategory = async (values, editingItem) => {
@@ -76,6 +118,7 @@ export const saveSubcategory = async (categoryId, subcategoryData) => {
     console.error('Error saving subcategory:', error);
   }
 };
+
 // Function to fetch all categories and their subcategories
 export const fetchCategoriesWithSubcategories = async () => {
   try {
@@ -103,3 +146,40 @@ export const fetchCategoriesWithSubcategories = async () => {
     return [];
   }
 };
+
+// Function to delete a subcategory from Firebase
+export const deleteSubcategory = async (categoryId, subcategoryId) => {
+  try {
+    if (!categoryId || !subcategoryId) {
+      console.error('Error: categoryId or subcategoryId is undefined or invalid.');
+      return;
+    }
+    console.log(`Attempting to delete subcategory with ID: ${subcategoryId} from category with ID: ${categoryId}`);
+
+    // Reference to the specific subcategory document
+    const subcategoryRef = doc(db, 'category', categoryId, 'subcategories', subcategoryId);
+
+    // Delete the subcategory document
+    await deleteDoc(subcategoryRef);
+    console.log('Subcategory deleted successfully');
+  } catch (error) {
+    console.error('Error deleting subcategory:', error.message);
+  }
+}
+
+// delete category 
+export const deleteCategory = async (categoryId) => {
+  try {
+    if (!categoryId) {
+      console.error('Error: categoryId is undefined or invalid.');
+      return;
+    }
+    console.log(`Attempting to delete category with ID: ${categoryId}`);
+
+    await deleteDoc(doc(db, 'category', categoryId));
+    console.log('Category deleted successfully');
+  } catch (error) {
+    console.error('Error deleting category:', error.message);
+  }
+}
+

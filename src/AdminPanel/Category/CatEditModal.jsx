@@ -1,12 +1,25 @@
-import React, { useState } from 'react';
+// CatEditModal.js
+import React, { useState, useEffect } from 'react';
 import { Modal, Input, Button, Upload } from 'antd';
 import { UploadOutlined as UploadIcon } from '@ant-design/icons';
 import { Formik, Form, Field, ErrorMessage } from 'formik';
 import { CategorySchema } from './CategorySchema'; // Import Yup validation
 import './category.css'; // Import the CSS file
 
-const CategoryModal = ({ isModalOpen, setIsModalOpen, handleFormSubmit }) => {
+const CatEditModal = ({ isModalOpen, setIsModalOpen, handleFormSubmit, editingItem, setEditingItem }) => {
   const [fileList, setFileList] = useState([]);
+
+  useEffect(() => {
+    if (editingItem) {
+      // Pre-fill the file list if editing an existing category with images
+      setFileList(editingItem.images.map((image, index) => ({
+        uid: index,
+        name: `Image ${index + 1}`,
+        status: 'done',
+        url: image,
+      })));
+    }
+  }, [editingItem]);
 
   const handleFileChange = (info) => {
     let newFileList = [...info.fileList];
@@ -15,35 +28,41 @@ const CategoryModal = ({ isModalOpen, setIsModalOpen, handleFormSubmit }) => {
   };
 
   const onFinish = (values, { resetForm }) => {
-    handleFormSubmit({ ...values, images: fileList.map(file => file.originFileObj) });
+    handleFormSubmit({ ...values, images: fileList.map(file => file.originFileObj || file.url) });
     resetForm(); // Reset the form fields
     setFileList([]); // Clear file list
+    setEditingItem(null); // Clear editing item
     setIsModalOpen(false); // Close the modal
   };
 
   const handleCancel = () => {
     setIsModalOpen(false);
+    setEditingItem(null);
   };
 
   return (
     <Modal
-      title="Add New Category"
+      title="Edit Category"
       open={isModalOpen}
       onCancel={handleCancel}
       footer={null}
     >
       <Formik
-        initialValues={{ category: '', images: [] }}
+        initialValues={{
+          category: editingItem ? editingItem.category : '',
+          images: editingItem ? editingItem.images : [],
+        }}
         validationSchema={CategorySchema}
         onSubmit={onFinish}
+        enableReinitialize // Ensures the form updates when editingItem changes
       >
-        {({ setFieldValue, resetForm }) => (
+        {({ setFieldValue }) => (
           <Form layout="vertical">
             <div className="form-item">
               <label htmlFor="category">Category Name</label>
               <Field
                 name="category"
-                as={Input} // Use Ant Design Input component
+                as={Input}
                 placeholder="Enter category name"
               />
               <ErrorMessage
@@ -61,7 +80,7 @@ const CategoryModal = ({ isModalOpen, setIsModalOpen, handleFormSubmit }) => {
                 fileList={fileList}
                 onChange={(info) => {
                   handleFileChange(info);
-                  setFieldValue('images', info.fileList.map(file => file.originFileObj)); // Ensure correct file object is set
+                  setFieldValue('images', info.fileList.map(file => file.originFileObj || file.url));
                 }}
                 listType="picture-card"
                 maxCount={5}
@@ -78,7 +97,7 @@ const CategoryModal = ({ isModalOpen, setIsModalOpen, handleFormSubmit }) => {
 
             <div className="form-item">
               <Button type="primary" htmlType="submit">
-                Add Category
+                Update Category
               </Button>
             </div>
           </Form>
@@ -88,4 +107,4 @@ const CategoryModal = ({ isModalOpen, setIsModalOpen, handleFormSubmit }) => {
   );
 };
 
-export default CategoryModal;
+export default CatEditModal;

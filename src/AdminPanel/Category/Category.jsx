@@ -1,11 +1,19 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { MenuFoldOutlined, MenuUnfoldOutlined, UploadOutlined, UserOutlined, VideoCameraOutlined } from '@ant-design/icons';
 import { Button, Layout, Menu, Space, Table, theme } from 'antd';
 import { useNavigate } from 'react-router-dom';
 import CategoryModal from './CategoryModal';
 import SubCategoryModal from '../Subcategory/SubCategoryModal';
-import { saveCategory, saveSubcategory, fetchCategoriesWithSubcategories } from '../Functions/firebaseService';
+import {
+  saveCategory,
+  saveSubcategory,
+  fetchCategoriesWithSubcategories,
+  deleteCategory,
+  deleteSubcategory,
+  updateCategory, // Import updateCategory function
+} from '../Functions/firebaseService';
 import './category.css';
+import CatEditModal from './CatEditModal';
 
 const { Header, Sider, Content } = Layout;
 
@@ -16,8 +24,6 @@ const Category = () => {
   const [isSubModalOpen, setIsSubModalOpen] = useState(false);
   const [editingItem, setEditingItem] = useState(null); // State for editing items
 
-  const formRef = useRef(null);
-
   const navigate = useNavigate();
 
   const {
@@ -26,19 +32,33 @@ const Category = () => {
 
   const handleFormSubmit = async (values) => {
     try {
-      const categoryId = await saveCategory(values);
-      if (categoryId) {
-        setCategories((prevCategories) => [
-          ...prevCategories,
-          { ...values, key: categoryId, subCategories: [] },
-        ]);
+      if (editingItem) {
+        // Update the existing category using the updateCategory function
+        await updateCategory(editingItem.key, values);
+        setCategories((prevCategories) =>
+          prevCategories.map((category) =>
+            category.key === editingItem.key ? { ...category, ...values } : category
+          )
+        );
+        setEditingItem(null); // Clear editing state
+      } else {
+        // Save new category if not in editing mode
+        const categoryId = await saveCategory(values);
+        if (categoryId) {
+          // Log values to check if image URL is correctly added
+          console.log('New Category Values:', values);
+          setCategories((prevCategories) => [
+            ...prevCategories,
+            { ...values, key: categoryId, subCategories: [] },
+          ]);
+        }
       }
-      setIsModalOpen(false);
+      setIsModalOpen(false); // Close the modal after save/update
     } catch (error) {
-      console.error('Error saving category:', error);
+      console.error('Error saving or updating category:', error);
     }
   };
-
+  
   const handleSubFormSubmit = async (values) => {
     try {
       await saveSubcategory(values.categoryKey, {
@@ -53,6 +73,43 @@ const Category = () => {
     }
   };
 
+  const handleDelete = async (categoryId) => {
+    try {
+      await deleteCategory(categoryId);
+      // Update local state to remove the deleted category
+      setCategories((prevCategories) =>
+        prevCategories.filter((category) => category.key !== categoryId)
+      );
+    } catch (error) {
+      console.error('Error deleting category:', error);
+    }
+  };
+
+  const handleSubDelete = async (categoryId, subcategoryId) => {
+    try {
+      await deleteSubcategory(categoryId, subcategoryId);
+      // Update local state to remove the deleted subcategory
+      setCategories((prevCategories) =>
+        prevCategories.map((category) =>
+          category.key === categoryId
+            ? {
+                ...category,
+                subCategories: category.subCategories.filter(
+                  (sub) => sub.key !== subcategoryId
+                ),
+              }
+            : category
+        )
+      );
+    } catch (error) {
+      console.error('Error deleting subcategory:', error);
+    }
+  };
+
+  const handleEdit = (item) => {
+    setEditingItem(item);
+    setIsModalOpen(true);
+  };
 
   useEffect(() => {
     const fetchCategories = async () => {
@@ -74,9 +131,16 @@ const Category = () => {
       key: 'images',
       render: (images) => (
         <div>
-          {images && images.map((image, index) => (
-            <img key={`category-image-${index}`} src={image} alt={`Category ${index}`} width={50} style={{ marginRight: 10 }} />
-          ))}
+          {images &&
+            images.map((image, index) => (
+              <img
+                key={`category-image-${index}`}
+                src={image}
+                alt={`Category ${index}`}
+                width={50}
+                style={{ marginRight: 10 }}
+              />
+            ))}
         </div>
       ),
     },
@@ -92,6 +156,7 @@ const Category = () => {
     },
   ];
 
+  // Expandable table configuration for subcategories
   const expandable = {
     expandedRowRender: (record) => (
       <Table
@@ -103,19 +168,26 @@ const Category = () => {
             key: 'images',
             render: (images) => (
               <div>
-                {images && images.map((image, index) => (
-                  <img key={`subcategory-image-${index}`} src={image} alt={`Subcategory ${index}`} width={50} style={{ marginRight: 10 }} />
-                ))}
+                {images &&
+                  images.map((image, index) => (
+                    <img
+                      key={`subcategory-image-${index}`}
+                      src={image}
+                      alt={`Subcategory ${index}`}
+                      width={50}
+                      style={{ marginRight: 10 }}
+                    />
+                  ))}
               </div>
             ),
           },
           {
             title: 'Action',
             key: 'action',
-            render: (_, record) => (
+            render: (_, subRecord) => (
               <Space size="middle">
-                <a onClick={() => handleSubEdit(record)}>Edit</a>
-                <a onClick={() => handleSubDelete(record.key)}>Delete</a>
+                <a onClick={() => handleSubEdit(subRecord)}>Edit</a>
+                <a onClick={() => handleSubDelete(record.key, subRecord.key)}>Delete</a>
               </Space>
             ),
           },
@@ -127,7 +199,6 @@ const Category = () => {
     ),
     rowExpandable: (record) => record.subCategories && record.subCategories.length > 0,
   };
-
 
   return (
     <Layout>
@@ -174,7 +245,11 @@ const Category = () => {
           <Button type="primary" onClick={() => setIsModalOpen(true)}>
             Add Category
           </Button>
-          <Button type="primary" onClick={() => setIsSubModalOpen(true)} disabled={categories.length === 0}>
+          <Button
+            type="primary"
+            onClick={() => setIsSubModalOpen(true)}
+            disabled={categories.length === 0}
+          >
             Add SubCategory
           </Button>
         </div>
@@ -188,10 +263,24 @@ const Category = () => {
             borderRadius: borderRadiusLG,
           }}
         >
-          <Table columns={columns} dataSource={categories} expandable={expandable} rowKey="key" />
+          <Table
+            columns={columns}
+            dataSource={categories}
+            expandable={expandable}
+            rowKey="key"
+          />
         </Content>
 
         <CategoryModal
+          isModalOpen={isModalOpen}
+          setIsModalOpen={setIsModalOpen}
+          handleFormSubmit={handleFormSubmit}
+          editingItem={editingItem}
+          setEditingItem={setEditingItem}
+        />
+
+        {/* CatEditModal is used for editing */}
+        <CatEditModal
           isModalOpen={isModalOpen}
           setIsModalOpen={setIsModalOpen}
           handleFormSubmit={handleFormSubmit}

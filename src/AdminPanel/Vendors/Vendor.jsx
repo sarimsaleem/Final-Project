@@ -3,14 +3,17 @@ import { Button, Layout, Menu, Space, Table, theme } from 'antd';
 import { MenuFoldOutlined, MenuUnfoldOutlined, UserOutlined, VideoCameraOutlined, UploadOutlined } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 import VendorModal from './VendorModal';
-import { addVendor, fetchVendors } from '../Functions/firebaseService';
+import VendorEditModal from './VendorEditModal';
+import { addVendor, fetchVendors, deleteVendor, updateVendor } from '../Functions/firebaseService'; // Import the updateVendor function
 
 const { Header, Sider, Content } = Layout;
 
 const Vendor = () => {
   const [collapsed, setCollapsed] = useState(false);
   const [open, setOpen] = useState(false);
+  const [editOpen, setEditOpen] = useState(false);
   const [vendors, setVendors] = useState([]);
+  const [selectedVendor, setSelectedVendor] = useState(null);
 
   const navigate = useNavigate();
 
@@ -24,6 +27,32 @@ const Vendor = () => {
     const updatedVendors = await fetchVendors();
     setVendors(updatedVendors);
     setOpen(false);
+  };
+
+  // Function to handle editing vendors
+  const handleEditVendor = async (updatedVendor) => {
+    try {
+      // Check if selectedVendor has an ID to update
+      if (selectedVendor && selectedVendor.id) {
+        await updateVendor(selectedVendor.id, updatedVendor); // Update the vendor in Firebase
+        const updatedVendors = await fetchVendors();
+        setVendors(updatedVendors);
+        setEditOpen(false); // Close the modal after successful update
+      }
+    } catch (error) {
+      console.error('Error updating vendor:', error);
+    }
+  };
+
+  // Function to delete vendors
+  const handleDeleteVendor = async (vendorId) => {
+    try {
+      await deleteVendor(vendorId);
+      const updatedVendors = await fetchVendors();
+      setVendors(updatedVendors);
+    } catch (error) {
+      console.error('Error deleting vendor:', error);
+    }
   };
 
   useEffect(() => {
@@ -50,8 +79,18 @@ const Vendor = () => {
       key: 'action',
       render: (_, record) => (
         <Space size="middle">
-          <a>Edit</a>
-          <a>Delete</a>
+          <Button
+            type="link"
+            onClick={() => {
+              setSelectedVendor(record); 
+              setEditOpen(true); 
+            }}
+          >
+            Edit
+          </Button>
+          <Button type="link" danger onClick={() => handleDeleteVendor(record.id)}>
+            Delete
+          </Button>
         </Space>
       ),
     },
@@ -113,11 +152,17 @@ const Vendor = () => {
             borderRadius: borderRadiusLG,
           }}
         >
-          <Table columns={columns} dataSource={vendors} rowKey="id" />
-          <VendorModal
-            open={open}
-            onClose={() => setOpen(false)}
-            onSubmit={handleAddVendor}
+          <Table
+            columns={columns}
+            dataSource={vendors}
+            rowKey={(record) => record.id || `${record.name}-${record.contact}`}
+          />
+          <VendorModal open={open} onClose={() => setOpen(false)} onSubmit={handleAddVendor} />
+          <VendorEditModal
+            open={editOpen}
+            onClose={() => setEditOpen(false)}
+            onSubmit={handleEditVendor}
+            initialValues={selectedVendor || { name: '', contact: '' }}
           />
         </Content>
       </Layout>
