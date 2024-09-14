@@ -52,9 +52,9 @@ const Product = () => {
         }, []);
         
         setCategories(categoriesData);
-        // console.log(categoriesData,"categoriesData")
+        console.log(categoriesData,"categoriesData")
         setSubcategories(flatSubcategories);
-        // console.log(flatSubcategories,"category")
+        console.log(flatSubcategories,"category")
         // setCategoryLookup(categoryLookup); // Set category lookup table
         // console.log(categoryLookup,"categoryLookup")
       } catch (error) {
@@ -91,7 +91,7 @@ const Product = () => {
       title: 'Category',
       dataIndex: 'category',
       key: 'category',
-      render: (value) => console.log(value,"value") ,
+      // render: (value) => console.log(value,"value") ,
     },
     {
       title: 'SubCategory',
