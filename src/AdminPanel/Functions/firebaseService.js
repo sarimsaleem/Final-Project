@@ -73,17 +73,6 @@ export const updateVendor = async (vendorId, updatedData) => {
   }
 };
 
-export const updateCategory = async (categoryId, updatedData) => {
-  try {
-    const categoryRef = doc(collection(db, "category"), categoryId)
-    await updateDoc(categoryRef, updatedData)
-    console.log('Category updated successfully');
-  } catch (error) {
-    console.error('Category updating vendor:', error);
-    throw error
-  }
-}
-
 // Function to save category
 export const saveCategory = async (values, editingItem) => {
   try {
@@ -147,6 +136,22 @@ export const fetchCategoriesWithSubcategories = async () => {
   }
 };
 
+// delete category 
+export const deleteCategory = async (categoryId) => {
+  try {
+    if (!categoryId) {
+      console.error('Error: categoryId is undefined or invalid.');
+      return;
+    }
+    console.log(`Attempting to delete category with ID: ${categoryId}`);
+
+    await deleteDoc(doc(db, 'category', categoryId));
+    console.log('Category deleted successfully');
+  } catch (error) {
+    console.error('Error deleting category:', error.message);
+  }
+}
+
 // Function to delete a subcategory from Firebase
 export const deleteSubcategory = async (categoryId, subcategoryId) => {
   try {
@@ -167,19 +172,13 @@ export const deleteSubcategory = async (categoryId, subcategoryId) => {
   }
 }
 
-// delete category 
-export const deleteCategory = async (categoryId) => {
+export const updateCategory = async (categoryId, updatedData) => {
   try {
-    if (!categoryId) {
-      console.error('Error: categoryId is undefined or invalid.');
-      return;
-    }
-    console.log(`Attempting to delete category with ID: ${categoryId}`);
-
-    await deleteDoc(doc(db, 'category', categoryId));
-    console.log('Category deleted successfully');
+    const categoryRef = doc(collection(db, "category"), categoryId)
+    await updateDoc(categoryRef, updatedData)
+    console.log('Category updated successfully');
   } catch (error) {
-    console.error('Error deleting category:', error.message);
+    console.error('Category updating vendor:', error);
+    throw error
   }
 }
-

@@ -117,7 +117,7 @@ const Category = () => {
       setCategories(categoriesData);
     };
     fetchCategories();
-  }, []);
+  }, [categories]);
 
   const columns = [
     {

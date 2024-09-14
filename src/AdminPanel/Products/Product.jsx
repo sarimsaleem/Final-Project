@@ -52,9 +52,9 @@ const Product = () => {
         }, []);
         
         setCategories(categoriesData);
-        console.log(categoriesData,"categoriesData")
+        // console.log(categoriesData,"categoriesData")
         setSubcategories(flatSubcategories);
-        console.log(flatSubcategories,"category")
+        // console.log(flatSubcategories,"category")
         // setCategoryLookup(categoryLookup); // Set category lookup table
         // console.log(categoryLookup,"categoryLookup")
       } catch (error) {
@@ -78,9 +78,11 @@ const Product = () => {
 
 
   const handleAddProduct = (product) => {
+    // console.log(product,"product")
     setProducts((prevProducts) => [
       ...prevProducts,
       { ...product, key: prevProducts.length + 1 },
+      // console.log(prevProducts,"prevProducts")
     ]);
     setOpen(false);
   };

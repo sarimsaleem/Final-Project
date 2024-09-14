@@ -14,7 +14,7 @@ const ProductModal = ({ open, onClose, onSubmit, categories, subcategories, vend
   const handleCategoryChange = (value, setFieldValue) => {
     setSelectedCategory(value);
     setFieldValue('category', value);
-    setFieldValue('subCategory', ''); // Clear the subcategory when category changes
+    setFieldValue('subCategory', ''); 
   };
 
 
