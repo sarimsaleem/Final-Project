@@ -3,7 +3,7 @@ import { MenuFoldOutlined, MenuUnfoldOutlined, UploadOutlined, UserOutlined, Vid
 import { Button, Layout, Menu, Space, Table, theme } from 'antd';
 import { useNavigate } from 'react-router-dom';
 import CategoryModal from './CategoryModal';
-import SubCatEditModal from '../Subcategory/SubCatEditModal';
+import SubCategoryModal from '../Subcategory/SubCategoryModal'; // Import the SubCategoryModal
 import {
   saveCategory,
   saveSubcategory,
@@ -284,19 +284,17 @@ const Category = () => {
         <CatEditModal
           isModalOpen={isEditModalOpen}
           setIsModalOpen={setIsEditModalOpen}
+          item={editingItem}
           handleFormSubmit={handleFormSubmit}
-          editingItem={editingItem}
-          setEditingItem={setEditingItem}
         />
 
-        <SubCatEditModal
-          isModalOpen={isSubModalOpen}
-          setIsModalOpen={setIsSubModalOpen}
+        <SubCategoryModal
+          isSubModalOpen={isSubModalOpen}
+          setIsSubModalOpen={setIsSubModalOpen}
           handleSubFormSubmit={handleSubFormSubmit}
-          editingSubItem={editingSubItem}
-          setEditingSubItem={setEditingSubItem}
+          categories={categories}
         />
-      </Layout> 
+      </Layout>
     </Layout>
   );
 };

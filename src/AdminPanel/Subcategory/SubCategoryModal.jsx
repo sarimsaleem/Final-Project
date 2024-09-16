@@ -39,7 +39,7 @@ const SubCategoryModal = ({ isSubModalOpen, setIsSubModalOpen, handleSubFormSubm
       >
         {({ setFieldValue, resetForm }) => (
           <FormikForm>
-            <AntForm.Item label="Category" name="categoryKey" validateStatus="error">
+            <AntForm.Item label="Category" name="categoryKey">
               <Field as="select" name="categoryKey">
                 <option value="">Select Category</option>
                 {categories.map((category) => (
@@ -51,14 +51,14 @@ const SubCategoryModal = ({ isSubModalOpen, setIsSubModalOpen, handleSubFormSubm
               <ErrorMessage name="categoryKey" component="div" style={{ color: 'red' }} />
             </AntForm.Item>
 
-            <AntForm.Item label="SubCategory Name" name="subCategory" validateStatus="error">
+            <AntForm.Item label="SubCategory Name" name="subCategory">
               <Field name="subCategory">
                 {({ field }) => <Input {...field} placeholder="Enter subcategory name" />}
               </Field>
               <ErrorMessage name="subCategory" component="div" style={{ color: 'red' }} />
             </AntForm.Item>
 
-            <AntForm.Item label="SubCategory Images" name="images" validateStatus="error">
+            <AntForm.Item label="SubCategory Images" name="images">
               <Upload
                 multiple
                 beforeUpload={() => false}
@@ -68,8 +68,8 @@ const SubCategoryModal = ({ isSubModalOpen, setIsSubModalOpen, handleSubFormSubm
                   setFieldValue('images', fileList.map((file) => file.originFileObj));
                 }}
                 onRemove={() => {
-                  setFieldValue('images', []); // Clear images from Formik when files are removed
                   setFileList([]); // Reset the file list
+                  setFieldValue('images', []); // Clear images from Formik when files are removed
                 }}
                 listType="picture"
               >
