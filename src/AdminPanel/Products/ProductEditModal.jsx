@@ -1,67 +1,99 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Modal, Select, Button, Input, Upload, Form as AntForm } from 'antd';
 import { Formik, Form, Field } from 'formik';
 import { UploadOutlined as UploadIcon } from '@ant-design/icons';
-import { productValidationSchema } from './ProductSchema'; // Ensure your schema path is correct
+import { productValidationSchema } from './ProductSchema'; 
 
 const { Option } = Select;
 
-const ProductModal = ({ open, onClose, onSubmit, categories, subcategories, vendors }) => {
-  const [selectedCategory, setSelectedCategory] = useState('');
-  const [fileList, setFileList] = useState([]);
+const ProductEditModal = ({ open, onClose, onSubmit, productData, categories, subcategories, vendors }) => {
+  const [selectedCategory, setSelectedCategory] = useState(productData.category || '');
+  const [fileList, setFileList] = useState(productData.images.map((url, index) => ({
+    uid: index,
+    name: `image-${index}`,
+    url: url,
+  })) || []); // Display existing images
+  const [uploadFiles, setUploadFiles] = useState([]); // For new files to be uploaded
+
+  useEffect(() => {
+    // Update selectedCategory when productData changes
+    setSelectedCategory(productData.category || '');
+    setFileList(productData.images.map((url, index) => ({
+      uid: index,
+      name: `image-${index}`,
+      url: url,
+    })) || []);
+  }, [productData]);
 
   const handleCategoryChange = (value, setFieldValue) => {
     setSelectedCategory(value);
-    setFieldValue('category', value);  
-    setFieldValue('subCategory', '');  // Reset subcategory when category changes
+    setFieldValue('category', value);
+    setFieldValue('subCategory', ''); // Reset subcategory when category changes
   };
 
   const handleUploadChange = ({ fileList }) => {
     setFileList(fileList);
+    setUploadFiles(fileList.filter(file => !file.url)); // New files that don't have a URL
+  };
+
+  const handleRemove = (file) => {
+    if (file.url) {
+      // If the file has a URL (existing image), remove it from the list
+      setFileList((prevFileList) => prevFileList.filter((f) => f.url !== file.url));
+    } else {
+      // If it's a new file, remove it from uploadFiles
+      setUploadFiles((prevUploadFiles) => prevUploadFiles.filter((f) => f.uid !== file.uid));
+    }
   };
 
   return (
     <Modal
-      title="Add Product"
+      title="Edit Product"
       open={open}
       onCancel={() => {
-        setFileList([]);
+        setFileList([]); 
+        setUploadFiles([]);
         onClose();
       }}
       footer={null}
     >
       <Formik
         initialValues={{
-          name: '',
-          category: '',
-          subCategory: '',
-          vendor: '',
-          images: [],
+          id: productData.id || '', // Ensure ID is included
+          name: productData.name || '',
+          category: productData.category || '',
+          subCategory: productData.subCategory || '',
+          vendor: productData.vendor || '',
+          images: productData.images || [], // Existing images
         }}
         validationSchema={productValidationSchema}
         onSubmit={(values, { resetForm }) => {
-          onSubmit({ ...values, images: fileList.map((file) => file.originFileObj) });
-          resetForm(); // Reset the form on submit
-          setFileList([]);
+          // Collect existing images and newly uploaded files
+          onSubmit({
+            ...values,
+            images: [
+              ...fileList.filter(file => file.url).map(file => file.url), // Existing images
+              ...uploadFiles.map(file => URL.createObjectURL(file.originFileObj || file)) // New images
+            ]
+          });
+          resetForm(); 
+          setFileList([]); 
+          setUploadFiles([]);
           onClose();
         }}
       >
         {({ errors, touched, setFieldValue, values }) => (
           <Form>
-            {/* Product Name */}
             <AntForm.Item
               label="Product Name"
               validateStatus={errors.name && touched.name ? 'error' : ''}
               help={errors.name && touched.name ? errors.name : ''}
             >
               <Field name="name">
-                {({ field }) => (
-                  <Input {...field} placeholder="Enter product name" />
-                )}
+                {({ field }) => <Input {...field} placeholder="Enter product name" />}
               </Field>
             </AntForm.Item>
 
-            {/* Category Selection */}
             <AntForm.Item
               label="Category"
               validateStatus={errors.category && touched.category ? 'error' : ''}
@@ -85,7 +117,6 @@ const ProductModal = ({ open, onClose, onSubmit, categories, subcategories, vend
               </Field>
             </AntForm.Item>
 
-            {/* Subcategory Selection (Filtered by Selected Category) */}
             <AntForm.Item
               label="Subcategory"
               validateStatus={errors.subCategory && touched.subCategory ? 'error' : ''}
@@ -98,10 +129,10 @@ const ProductModal = ({ open, onClose, onSubmit, categories, subcategories, vend
                     placeholder="Select subcategory"
                     value={values.subCategory}
                     onChange={(value) => setFieldValue('subCategory', value)}
-                    disabled={!selectedCategory}  // Disable dropdown if no category is selected
+                    disabled={!selectedCategory}
                   >
                     {subcategories
-                      .filter((sc) => sc.categoryKey === selectedCategory) // Filter based on selected category
+                      .filter((sc) => sc.categoryKey === selectedCategory)
                       .map((subcategory) => (
                         <Option key={subcategory.key} value={subcategory.key}>
                           {subcategory.subCategory}
@@ -112,7 +143,6 @@ const ProductModal = ({ open, onClose, onSubmit, categories, subcategories, vend
               </Field>
             </AntForm.Item>
 
-            {/* Vendor Selection */}
             <AntForm.Item
               label="Vendor"
               validateStatus={errors.vendor && touched.vendor ? 'error' : ''}
@@ -136,17 +166,13 @@ const ProductModal = ({ open, onClose, onSubmit, categories, subcategories, vend
               </Field>
             </AntForm.Item>
 
-            {/* Image Upload */}
-            <AntForm.Item
-              label="Images"
-              validateStatus={errors.images && touched.images ? 'error' : ''}
-              help={errors.images && touched.images ? errors.images : ''}
-            >
+            <AntForm.Item label="Images">
               <Upload
                 listType="picture"
                 fileList={fileList}
-                beforeUpload={() => false}  // Prevent automatic upload
+                beforeUpload={() => false}
                 onChange={handleUploadChange}
+                onRemove={handleRemove}
                 accept="image/*"
                 multiple
               >
@@ -154,10 +180,9 @@ const ProductModal = ({ open, onClose, onSubmit, categories, subcategories, vend
               </Upload>
             </AntForm.Item>
 
-            {/* Submit Button */}
             <AntForm.Item>
               <Button type="primary" htmlType="submit">
-                Submit
+                Save Changes
               </Button>
             </AntForm.Item>
           </Form>
@@ -167,4 +192,4 @@ const ProductModal = ({ open, onClose, onSubmit, categories, subcategories, vend
   );
 };
 
-export default ProductModal;
+export default ProductEditModal;

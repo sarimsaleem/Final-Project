@@ -29,10 +29,10 @@ const CatEditModal = ({ isModalOpen, setIsModalOpen, handleFormSubmit, editingIt
 
   const onFinish = (values, { resetForm }) => {
     handleFormSubmit({ ...values, images: fileList.map(file => file.originFileObj || file.url) });
-    resetForm(); // Reset the form fields
-    setFileList([]); // Clear file list
-    setEditingItem(null); // Clear editing item
-    setIsModalOpen(false); // Close the modal
+    resetForm(); 
+    setFileList([]); 
+    setEditingItem(null); 
+    setIsModalOpen(false); 
   };
 
   const handleCancel = () => {

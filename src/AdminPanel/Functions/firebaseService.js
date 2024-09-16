@@ -4,9 +4,10 @@ import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 
 const vendorCollectionRef = collection(db, 'vendors');
 const categoryCollectionRef = collection(db, 'category');
+const productCollectionRef = collection(db, 'products');
 
 // Function to handle image uploads
-const uploadImages = async (images) => {
+export const uploadImages = async (images) => {
   const imageUrls = [];
   for (const image of images) {
     const imageRef = ref(imgDB, `images/${image.name}`);
@@ -15,6 +16,82 @@ const uploadImages = async (images) => {
     imageUrls.push(url);
   }
   return imageUrls;
+};
+// Function to add a new product
+export const addProduct = async (product, CB) => {
+  try {
+    // Upload each image and get the URLs
+    const imageUrls = product.images ? await uploadImages(product.images) : [];
+
+    // Add the product to Firestore with the image URLs
+    const productWithImages = { ...product, images: imageUrls };
+    await addDoc(productCollectionRef, productWithImages);
+
+    console.log('Product added successfully');
+    CB && CB();
+  } catch (error) {
+    console.error('Error adding product:', error);
+  }
+};
+// Function to fetch all products
+export const fetchProducts = async () => {
+  try {
+    const querySnapshot = await getDocs(productCollectionRef);
+    const products = querySnapshot.docs.map((doc) => ({
+      id: doc.id, // Ensure the id field is included
+      ...doc.data(),
+    }));
+    return products;
+  } catch (error) {
+    console.error('Error fetching products:', error);
+    return [];
+  }
+};
+
+// Function to delete a product
+export const deleteProduct = async (productId) => {
+  try {
+    if (!productId) {
+      console.error('Error: productId is undefined or invalid.');
+      return;
+    }
+    console.log(`Attempting to delete product with ID: ${productId}`);
+    await deleteDoc(doc(db, 'products', productId));
+    console.log('Product deleted successfully');
+  } catch (error) {
+    console.error('Error deleting product:', error);
+  }
+};
+
+// Function to update a product
+// export const updateProduct = async (productId, updatedProduct) => {
+//   try {
+//     const productRef = doc(db, 'products', productId);
+//     await updateDoc(productRef, updatedProduct);
+//     console.log('Product updated successfully');
+//   } catch (error) {
+//     console.error('Error updating product:', error);
+//     throw error;
+//   }
+// };
+
+export const updateProduct = async (productId, updatedProduct) => {
+  try {
+    const productRef = doc(db, 'products', productId);
+
+    // Check if there are new images to upload
+    if (updatedProduct.images && updatedProduct.images.length > 0) {
+      const newImages = updatedProduct.images.filter(image => image instanceof File);
+      const existingImages = updatedProduct.images.filter(image => typeof image === 'string');
+      const uploadedImageUrls = await uploadImages(newImages);
+      updatedProduct.images = [...existingImages, ...uploadedImageUrls];
+    }
+    await updateDoc(productRef, updatedProduct);
+    console.log('Product updated successfully');
+  } catch (error) {
+    console.error('Error updating product:', error);
+    throw error;
+  }
 };
 
 // Function to add a new vendor
@@ -45,15 +122,12 @@ export const fetchVendors = async () => {
 // Function to delete vendors
 export const deleteVendor = async (vendorId) => {
   try {
-    // Debugging step: Check if vendorId is correctly passed
     if (!vendorId) {
       console.error('Error: vendorId is undefined or invalid.');
       return;
     }
-
     console.log(`Attempting to delete vendor with ID: ${vendorId}`);
 
-    // Correctly delete the document using the vendorId
     await deleteDoc(doc(db, 'vendors', vendorId));
     console.log('Vendor deleted successfully');
   } catch (error) {
@@ -64,8 +138,8 @@ export const deleteVendor = async (vendorId) => {
 // update Vendor 
 export const updateVendor = async (vendorId, updatedData) => {
   try {
-    const vendorRef = doc(collection(db, 'vendors'), vendorId); // Reference to the specific vendor document
-    await updateDoc(vendorRef, updatedData); // Update the document with new data
+    const vendorRef = doc(collection(db, 'vendors'), vendorId);
+    await updateDoc(vendorRef, updatedData);
     console.log('Vendor updated successfully');
   } catch (error) {
     console.error('Error updating vendor:', error);
@@ -172,13 +246,68 @@ export const deleteSubcategory = async (categoryId, subcategoryId) => {
   }
 }
 
+// Function to update a category
+// export const updateCategory = async (categoryId, updatedData) => {
+//   try {
+//     const categoryRef = doc(db, "category", categoryId); 
+//     await updateDoc(categoryRef, updatedData);
+//     console.log('Category updated successfully');
+//   } catch (error) {
+//     console.error('Error updating category:', error);
+//     throw error;
+//   }
+// };
 export const updateCategory = async (categoryId, updatedData) => {
   try {
-    const categoryRef = doc(collection(db, "category"), categoryId)
-    await updateDoc(categoryRef, updatedData)
+    const categoryRef = doc(db, "category", categoryId);
+
+    // Check if there are new images to upload
+    if (updatedData.images && updatedData.images.length > 0) {
+      const newImages = updatedData.images.filter(image => image instanceof File);
+      const existingImages = updatedData.images.filter(image => typeof image === 'string');
+
+      // Upload new images and get their URLs
+      const uploadedImageUrls = await uploadImages(newImages);
+
+      // Merge the uploaded image URLs with existing ones
+      updatedData.images = [...existingImages, ...uploadedImageUrls];
+    }
+
+    // Update the category document in Firestore with new data
+    await updateDoc(categoryRef, updatedData);
     console.log('Category updated successfully');
   } catch (error) {
-    console.error('Category updating vendor:', error);
-    throw error
+    console.error('Error updating category:', error);
+    throw error;
   }
-}
+};
+
+// updadte subcategory 
+
+export const updateSubcategory = async (categoryId, subcategoryId, updatedData) => {
+  try {
+    // Reference to the category document
+    const categoryRef = doc(db, "category", categoryId);
+
+    // Check if there are new images to upload
+    if (updatedData.images && updatedData.images.length > 0) {
+      const newImages = updatedData.images.filter(image => image instanceof File);
+      const existingImages = updatedData.images.filter(image => typeof image === 'string');
+
+      // Upload new images and get their URLs
+      const uploadedImageUrls = await uploadImages(newImages);
+
+      // Merge the uploaded image URLs with existing ones
+      updatedData.images = [...existingImages, ...uploadedImageUrls];
+    }
+
+    // Update the subcategory document within the category
+    await updateDoc(categoryRef, {
+      [`subCategories.${subcategoryId}`]: updatedData
+    });
+    console.log('Subcategory updated successfully');
+  } catch (error) {
+    console.error('Error updating subcategory:', error);
+    throw error;
+  }
+};

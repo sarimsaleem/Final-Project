@@ -3,14 +3,15 @@ import { MenuFoldOutlined, MenuUnfoldOutlined, UploadOutlined, UserOutlined, Vid
 import { Button, Layout, Menu, Space, Table, theme } from 'antd';
 import { useNavigate } from 'react-router-dom';
 import CategoryModal from './CategoryModal';
-import SubCategoryModal from '../Subcategory/SubCategoryModal';
+import SubCatEditModal from '../Subcategory/SubCatEditModal';
 import {
   saveCategory,
   saveSubcategory,
   fetchCategoriesWithSubcategories,
   deleteCategory,
   deleteSubcategory,
-  updateCategory, // Import updateCategory function
+  updateCategory,
+  updateSubcategory,
 } from '../Functions/firebaseService';
 import './category.css';
 import CatEditModal from './CatEditModal';
@@ -20,65 +21,69 @@ const { Header, Sider, Content } = Layout;
 const Category = () => {
   const [collapsed, setCollapsed] = useState(false);
   const [categories, setCategories] = useState([]);
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isSubModalOpen, setIsSubModalOpen] = useState(false);
-  const [editingItem, setEditingItem] = useState(null); // State for editing items
+  const [editingItem, setEditingItem] = useState(null);
+  const [editingSubItem, setEditingSubItem] = useState(null);
 
   const navigate = useNavigate();
 
-  const {
-    token: { colorBgContainer, borderRadiusLG },
-  } = theme.useToken();
+  const { token: { colorBgContainer, borderRadiusLG } } = theme.useToken();
 
   const handleFormSubmit = async (values) => {
     try {
       if (editingItem) {
-        // Update the existing category using the updateCategory function
         await updateCategory(editingItem.key, values);
-        setCategories((prevCategories) =>
-          prevCategories.map((category) =>
+        setCategories(prevCategories =>
+          prevCategories.map(category =>
             category.key === editingItem.key ? { ...category, ...values } : category
           )
         );
-        setEditingItem(null); // Clear editing state
+        setEditingItem(null);
+        setIsEditModalOpen(false);
       } else {
-        // Save new category if not in editing mode
         const categoryId = await saveCategory(values);
         if (categoryId) {
-          // Log values to check if image URL is correctly added
-          console.log('New Category Values:', values);
-          setCategories((prevCategories) => [
+          setCategories(prevCategories => [
             ...prevCategories,
             { ...values, key: categoryId, subCategories: [] },
           ]);
         }
+        setIsAddModalOpen(false);
       }
-      setIsModalOpen(false); // Close the modal after save/update
     } catch (error) {
       console.error('Error saving or updating category:', error);
     }
   };
-  
+
   const handleSubFormSubmit = async (values) => {
     try {
-      await saveSubcategory(values.categoryKey, {
-        ...values,
-        key: new Date().toISOString(), // Ensure this key is unique
-      });
-      const categoriesData = await fetchCategoriesWithSubcategories();
-      setCategories(categoriesData);
-      setIsSubModalOpen(false);
+      if (editingSubItem) {
+        await updateSubcategory(editingSubItem.categoryKey, editingSubItem.key, values);
+        const categoriesData = await fetchCategoriesWithSubcategories();
+        setCategories(categoriesData);
+        setEditingSubItem(null);
+        setIsSubModalOpen(false);
+      } else {
+        await saveSubcategory(values.categoryKey, {
+          ...values,
+          key: new Date().toISOString(),
+        });
+        const categoriesData = await fetchCategoriesWithSubcategories();
+        setCategories(categoriesData);
+        setIsSubModalOpen(false);
+      }
     } catch (error) {
-      console.error('Error saving subcategory:', error);
+      console.error('Error saving or updating subcategory:', error);
     }
   };
 
   const handleDelete = async (categoryId) => {
     try {
       await deleteCategory(categoryId);
-      // Update local state to remove the deleted category
-      setCategories((prevCategories) =>
-        prevCategories.filter((category) => category.key !== categoryId)
+      setCategories(prevCategories =>
+        prevCategories.filter(category => category.key !== categoryId)
       );
     } catch (error) {
       console.error('Error deleting category:', error);
@@ -88,15 +93,12 @@ const Category = () => {
   const handleSubDelete = async (categoryId, subcategoryId) => {
     try {
       await deleteSubcategory(categoryId, subcategoryId);
-      // Update local state to remove the deleted subcategory
-      setCategories((prevCategories) =>
-        prevCategories.map((category) =>
+      setCategories(prevCategories =>
+        prevCategories.map(category =>
           category.key === categoryId
             ? {
                 ...category,
-                subCategories: category.subCategories.filter(
-                  (sub) => sub.key !== subcategoryId
-                ),
+                subCategories: category.subCategories.filter(sub => sub.key !== subcategoryId),
               }
             : category
         )
@@ -108,7 +110,12 @@ const Category = () => {
 
   const handleEdit = (item) => {
     setEditingItem(item);
-    setIsModalOpen(true);
+    setIsEditModalOpen(true);
+  };
+
+  const handleSubEdit = (subItem) => {
+    setEditingSubItem(subItem);
+    setIsSubModalOpen(true);
   };
 
   useEffect(() => {
@@ -117,7 +124,7 @@ const Category = () => {
       setCategories(categoriesData);
     };
     fetchCategories();
-  }, [categories]);
+  }, []);
 
   const columns = [
     {
@@ -131,16 +138,15 @@ const Category = () => {
       key: 'images',
       render: (images) => (
         <div>
-          {images &&
-            images.map((image, index) => (
-              <img
-                key={`category-image-${index}`}
-                src={image}
-                alt={`Category ${index}`}
-                width={50}
-                style={{ marginRight: 10 }}
-              />
-            ))}
+          {images && images.map((image, index) => (
+            <img
+              key={`category-image-${index}`}
+              src={image}
+              alt={`Category ${index}`}
+              width={50}
+              style={{ marginRight: 10 }}
+            />
+          ))}
         </div>
       ),
     },
@@ -156,7 +162,6 @@ const Category = () => {
     },
   ];
 
-  // Expandable table configuration for subcategories
   const expandable = {
     expandedRowRender: (record) => (
       <Table
@@ -168,16 +173,15 @@ const Category = () => {
             key: 'images',
             render: (images) => (
               <div>
-                {images &&
-                  images.map((image, index) => (
-                    <img
-                      key={`subcategory-image-${index}`}
-                      src={image}
-                      alt={`Subcategory ${index}`}
-                      width={50}
-                      style={{ marginRight: 10 }}
-                    />
-                  ))}
+                {images && images.map((image, index) => (
+                  <img
+                    key={`subcategory-image-${index}`}
+                    src={image}
+                    alt={`Subcategory ${index}`}
+                    width={50}
+                    style={{ marginRight: 10 }}
+                  />
+                ))}
               </div>
             ),
           },
@@ -242,7 +246,7 @@ const Category = () => {
           <p>My name is Sarim</p>
         </Header>
         <div style={{ display: 'flex', gap: '10px', padding: '16px' }}>
-          <Button type="primary" onClick={() => setIsModalOpen(true)}>
+          <Button type="primary" onClick={() => setIsAddModalOpen(true)}>
             Add Category
           </Button>
           <Button
@@ -272,29 +276,27 @@ const Category = () => {
         </Content>
 
         <CategoryModal
-          isModalOpen={isModalOpen}
-          setIsModalOpen={setIsModalOpen}
+          isModalOpen={isAddModalOpen}
+          setIsModalOpen={setIsAddModalOpen}
           handleFormSubmit={handleFormSubmit}
-          editingItem={editingItem}
-          setEditingItem={setEditingItem}
         />
 
-        {/* CatEditModal is used for editing */}
         <CatEditModal
-          isModalOpen={isModalOpen}
-          setIsModalOpen={setIsModalOpen}
+          isModalOpen={isEditModalOpen}
+          setIsModalOpen={setIsEditModalOpen}
           handleFormSubmit={handleFormSubmit}
           editingItem={editingItem}
           setEditingItem={setEditingItem}
         />
 
-        <SubCategoryModal
-          isSubModalOpen={isSubModalOpen}
-          setIsSubModalOpen={setIsSubModalOpen}
+        <SubCatEditModal
+          isModalOpen={isSubModalOpen}
+          setIsModalOpen={setIsSubModalOpen}
           handleSubFormSubmit={handleSubFormSubmit}
-          categories={categories}
+          editingSubItem={editingSubItem}
+          setEditingSubItem={setEditingSubItem}
         />
-      </Layout>
+      </Layout> 
     </Layout>
   );
 };
