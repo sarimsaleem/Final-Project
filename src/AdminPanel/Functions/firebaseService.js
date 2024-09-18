@@ -148,7 +148,7 @@ export const updateVendor = async (vendorId, updatedData) => {
 };
 
 // Function to save category
-export const saveCategory = async (values, editingItem) => {
+export const saveCategory = async (values, editingItem, CB) => {
   try {
     let imageUrls = [];
     if (values.images && values.images.length > 0) {
@@ -159,9 +159,10 @@ export const saveCategory = async (values, editingItem) => {
       ? updateDoc(docRef, { ...values, images: imageUrls })
       : addDoc(docRef, { ...values, images: imageUrls });
 
-    const savedDoc = await saveOperation;
+    // const savedDoc = await saveOperation;
     console.log(editingItem ? 'Category updated successfully' : 'Category added successfully');
-    return editingItem ? editingItem.key : savedDoc.id;
+    CB && CB()
+    // return editingItem ? editingItem.key : savedDoc.id;
   } catch (error) {
     console.error('Error saving category:', error);
   }

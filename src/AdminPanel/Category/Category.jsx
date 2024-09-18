@@ -43,13 +43,15 @@ const Category = () => {
         setEditingItem(null);
         setIsEditModalOpen(false);
       } else {
-        const categoryId = await saveCategory(values);
-        if (categoryId) {
-          setCategories(prevCategories => [
-            ...prevCategories,
-            { ...values, key: categoryId, subCategories: [] },
-          ]);
-        }
+
+        await saveCategory(values, null, fetchCategories);
+
+        // if (categoryId) {
+        //   setCategories(prevCategories => [
+        //     ...prevCategories,
+        //     { ...values, key: categoryId, subCategories: [] },
+        //   ]);
+        // }
         setIsAddModalOpen(false);
       }
     } catch (error) {
@@ -97,9 +99,9 @@ const Category = () => {
         prevCategories.map(category =>
           category.key === categoryId
             ? {
-                ...category,
-                subCategories: category.subCategories.filter(sub => sub.key !== subcategoryId),
-              }
+              ...category,
+              subCategories: category.subCategories.filter(sub => sub.key !== subcategoryId),
+            }
             : category
         )
       );
@@ -119,12 +121,13 @@ const Category = () => {
   };
 
   useEffect(() => {
-    const fetchCategories = async () => {
-      const categoriesData = await fetchCategoriesWithSubcategories();
-      setCategories(categoriesData);
-    };
     fetchCategories();
   }, []);
+
+  const fetchCategories = async () => {
+    const categoriesData = await fetchCategoriesWithSubcategories();
+    setCategories(categoriesData);
+  };
 
   const columns = [
     {
