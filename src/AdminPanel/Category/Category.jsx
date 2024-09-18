@@ -3,7 +3,9 @@ import { MenuFoldOutlined, MenuUnfoldOutlined, UploadOutlined, UserOutlined, Vid
 import { Button, Layout, Menu, Space, Table, theme } from 'antd';
 import { useNavigate } from 'react-router-dom';
 import CategoryModal from './CategoryModal';
-import SubCategoryModal from '../Subcategory/SubCategoryModal'; // Import the SubCategoryModal
+import SubCategoryModal from '../Subcategory/SubCategoryModal'; 
+import CatEditModal from "./CatEditModal"
+import SubCatEditModal from '../Subcategory/SubCatEditModal'; 
 import {
   saveCategory,
   saveSubcategory,
@@ -14,7 +16,6 @@ import {
   updateSubcategory,
 } from '../Functions/firebaseService';
 import './category.css';
-import CatEditModal from './CatEditModal';
 
 const { Header, Sider, Content } = Layout;
 
@@ -24,6 +25,7 @@ const Category = () => {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isSubModalOpen, setIsSubModalOpen] = useState(false);
+  const [isSubEditModalOpen, setIsSubEditModalOpen] = useState(false); // State for SubCatEditModal
   const [editingItem, setEditingItem] = useState(null);
   const [editingSubItem, setEditingSubItem] = useState(null);
 
@@ -43,15 +45,7 @@ const Category = () => {
         setEditingItem(null);
         setIsEditModalOpen(false);
       } else {
-
         await saveCategory(values, null, fetchCategories);
-
-        // if (categoryId) {
-        //   setCategories(prevCategories => [
-        //     ...prevCategories,
-        //     { ...values, key: categoryId, subCategories: [] },
-        //   ]);
-        // }
         setIsAddModalOpen(false);
       }
     } catch (error) {
@@ -66,7 +60,7 @@ const Category = () => {
         const categoriesData = await fetchCategoriesWithSubcategories();
         setCategories(categoriesData);
         setEditingSubItem(null);
-        setIsSubModalOpen(false);
+        setIsSubEditModalOpen(false); // Close SubCatEditModal
       } else {
         await saveSubcategory(values.categoryKey, {
           ...values,
@@ -117,7 +111,7 @@ const Category = () => {
 
   const handleSubEdit = (subItem) => {
     setEditingSubItem(subItem);
-    setIsSubModalOpen(true);
+    setIsSubEditModalOpen(true); // Open SubCatEditModal for editing subcategories
   };
 
   useEffect(() => {
@@ -284,18 +278,26 @@ const Category = () => {
           handleFormSubmit={handleFormSubmit}
         />
 
+        <SubCategoryModal
+          isModalOpen={isSubModalOpen}
+          setIsModalOpen={setIsSubModalOpen}
+          handleSubFormSubmit={handleSubFormSubmit}
+        />
+
+        <SubCatEditModal
+          isModalOpen={isSubEditModalOpen}
+          setIsModalOpen={setIsSubEditModalOpen}
+          handleSubFormSubmit={handleSubFormSubmit}
+          editingSubItem={editingSubItem}
+          setEditingSubItem={setEditingSubItem}
+        />
+
         <CatEditModal
           isModalOpen={isEditModalOpen}
           setIsModalOpen={setIsEditModalOpen}
-          item={editingItem}
           handleFormSubmit={handleFormSubmit}
-        />
-
-        <SubCategoryModal
-          isSubModalOpen={isSubModalOpen}
-          setIsSubModalOpen={setIsSubModalOpen}
-          handleSubFormSubmit={handleSubFormSubmit}
-          categories={categories}
+          editingItem={editingItem}
+          setEditingItem={setEditingItem}
         />
       </Layout>
     </Layout>

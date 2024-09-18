@@ -1,4 +1,3 @@
-// CatEditModal.js
 import React, { useState, useEffect } from 'react';
 import { Modal, Input, Button, Upload } from 'antd';
 import { UploadOutlined as UploadIcon } from '@ant-design/icons';
@@ -6,11 +5,11 @@ import { Formik, Form, Field, ErrorMessage } from 'formik';
 import { CategorySchema } from './CategorySchema'; // Import Yup validation
 import './category.css'; // Import the CSS file
 
-const CatEditModal = ({ isModalOpen, setIsModalOpen, handleFormSubmit, editingItem, setEditingItem }) => {
+const CatEditModal = ({ isModalOpen, setIsModalOpen, handleFormSubmit, editingItem }) => {
   const [fileList, setFileList] = useState([]);
 
   useEffect(() => {
-    if (editingItem) {
+    if (editingItem && editingItem.images) {
       // Pre-fill the file list if editing an existing category with images
       setFileList(editingItem.images.map((image, index) => ({
         uid: index,
@@ -23,21 +22,19 @@ const CatEditModal = ({ isModalOpen, setIsModalOpen, handleFormSubmit, editingIt
 
   const handleFileChange = (info) => {
     let newFileList = [...info.fileList];
-    newFileList = newFileList.slice(-5);
+    newFileList = newFileList.slice(-5); // Restrict to 5 images
     setFileList(newFileList);
   };
 
   const onFinish = (values, { resetForm }) => {
     handleFormSubmit({ ...values, images: fileList.map(file => file.originFileObj || file.url) });
-    resetForm(); 
-    setFileList([]); 
-    setEditingItem(null); 
-    setIsModalOpen(false); 
+    resetForm(); // Reset the form fields after submission
+    setFileList([]); // Clear file list after submit
+    setIsModalOpen(false); // Close modal after submission
   };
 
   const handleCancel = () => {
-    setIsModalOpen(false);
-    setEditingItem(null);
+    setIsModalOpen(false); // Close modal when cancelled
   };
 
   return (
@@ -49,8 +46,8 @@ const CatEditModal = ({ isModalOpen, setIsModalOpen, handleFormSubmit, editingIt
     >
       <Formik
         initialValues={{
-          category: editingItem ? editingItem.category : '',
-          images: editingItem ? editingItem.images : [],
+          category: editingItem ? editingItem.category : '', // Pre-fill category name if editing
+          images: editingItem ? editingItem.images : [],    // Pre-fill images if editing
         }}
         validationSchema={CategorySchema}
         onSubmit={onFinish}
@@ -76,7 +73,7 @@ const CatEditModal = ({ isModalOpen, setIsModalOpen, handleFormSubmit, editingIt
               <label htmlFor="images">Category Images</label>
               <Upload
                 multiple
-                beforeUpload={() => false}
+                beforeUpload={() => false} // Prevent immediate upload
                 fileList={fileList}
                 onChange={(info) => {
                   handleFileChange(info);
