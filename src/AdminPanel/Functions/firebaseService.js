@@ -235,11 +235,7 @@ export const deleteSubcategory = async (categoryId, subcategoryId) => {
       return;
     }
     console.log(`Attempting to delete subcategory with ID: ${subcategoryId} from category with ID: ${categoryId}`);
-
-    // Reference to the specific subcategory document
     const subcategoryRef = doc(db, 'category', categoryId, 'subcategories', subcategoryId);
-
-    // Delete the subcategory document
     await deleteDoc(subcategoryRef);
     console.log('Subcategory deleted successfully');
   } catch (error) {
@@ -284,7 +280,6 @@ export const updateCategory = async (categoryId, updatedData) => {
 };
 
 // updadte subcategory 
-
 export const updateSubcategory = async (categoryId, subcategoryId, updatedData) => {
   try {
     // Reference to the category document

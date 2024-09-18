@@ -1,10 +1,8 @@
-// SubCatEditModal.js
 import React, { useState, useEffect } from 'react';
 import { Modal, Input, Button, Upload } from 'antd';
 import { UploadOutlined as UploadIcon } from '@ant-design/icons';
 import { Formik, Form, Field, ErrorMessage } from 'formik';
 import { CategorySchema } from '../Category/CategorySchema'; // Import Yup validation
-// import './category.css'; // Import the CSS file
 
 const SubCatEditModal = ({ isModalOpen, setIsModalOpen, handleSubFormSubmit, editingSubItem, setEditingSubItem }) => {
   const [fileList, setFileList] = useState([]);
@@ -23,7 +21,7 @@ const SubCatEditModal = ({ isModalOpen, setIsModalOpen, handleSubFormSubmit, edi
 
   const handleFileChange = (info) => {
     let newFileList = [...info.fileList];
-    newFileList = newFileList.slice(-5);
+    newFileList = newFileList.slice(-5); // Limit to 5 files
     setFileList(newFileList);
   };
 
@@ -54,7 +52,7 @@ const SubCatEditModal = ({ isModalOpen, setIsModalOpen, handleSubFormSubmit, edi
         }}
         validationSchema={CategorySchema}
         onSubmit={onFinish}
-        enableReinitialize // Ensures the form updates when editingSubItem changes
+        // enableReinitialize 
       >
         {({ setFieldValue }) => (
           <Form layout="vertical">

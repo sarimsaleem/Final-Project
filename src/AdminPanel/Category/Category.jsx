@@ -4,7 +4,7 @@ import { Button, Layout, Menu, Space, Table, theme } from 'antd';
 import { useNavigate } from 'react-router-dom';
 import CategoryModal from './CategoryModal';
 import SubCategoryModal from '../Subcategory/SubCategoryModal'; 
-import CatEditModal from "./CatEditModal"
+import CatEditModal from "./CatEditModal";
 import SubCatEditModal from '../Subcategory/SubCatEditModal'; 
 import {
   saveCategory,
@@ -28,9 +28,9 @@ const Category = () => {
   const [isSubEditModalOpen, setIsSubEditModalOpen] = useState(false); // State for SubCatEditModal
   const [editingItem, setEditingItem] = useState(null);
   const [editingSubItem, setEditingSubItem] = useState(null);
+  const [tableKey, setTableKey] = useState(0); // Key for forcing re-render
 
   const navigate = useNavigate();
-
   const { token: { colorBgContainer, borderRadiusLG } } = theme.useToken();
 
   const handleFormSubmit = async (values) => {
@@ -57,19 +57,16 @@ const Category = () => {
     try {
       if (editingSubItem) {
         await updateSubcategory(editingSubItem.categoryKey, editingSubItem.key, values);
-        const categoriesData = await fetchCategoriesWithSubcategories();
-        setCategories(categoriesData);
-        setEditingSubItem(null);
-        setIsSubEditModalOpen(false); // Close SubCatEditModal
       } else {
         await saveSubcategory(values.categoryKey, {
           ...values,
           key: new Date().toISOString(),
         });
-        const categoriesData = await fetchCategoriesWithSubcategories();
-        setCategories(categoriesData);
-        setIsSubModalOpen(false);
       }
+      const categoriesData = await fetchCategoriesWithSubcategories();
+      setCategories(categoriesData);
+      setTableKey(prevKey => prevKey + 1); // Force re-render
+      setIsSubEditModalOpen(false); // Close SubCatEditModal
     } catch (error) {
       console.error('Error saving or updating subcategory:', error);
     }
@@ -93,9 +90,9 @@ const Category = () => {
         prevCategories.map(category =>
           category.key === categoryId
             ? {
-              ...category,
-              subCategories: category.subCategories.filter(sub => sub.key !== subcategoryId),
-            }
+                ...category,
+                subCategories: category.subCategories.filter(sub => sub.key !== subcategoryId),
+              }
             : category
         )
       );
@@ -110,8 +107,9 @@ const Category = () => {
   };
 
   const handleSubEdit = (subItem) => {
+    console.log('Editing subItem:', subItem);
     setEditingSubItem(subItem);
-    setIsSubEditModalOpen(true); // Open SubCatEditModal for editing subcategories
+    setIsSubEditModalOpen(true); 
   };
 
   useEffect(() => {
@@ -120,6 +118,7 @@ const Category = () => {
 
   const fetchCategories = async () => {
     const categoriesData = await fetchCategoriesWithSubcategories();
+    console.log('Fetched categories:', categoriesData); 
     setCategories(categoriesData);
   };
 
@@ -187,7 +186,7 @@ const Category = () => {
             key: 'action',
             render: (_, subRecord) => (
               <Space size="middle">
-                <a onClick={() => handleSubEdit(subRecord)}>Edit</a>
+                <a onClick={() => handleSubEdit(subRecord)}>Edits</a>
                 <a onClick={() => handleSubDelete(record.key, subRecord.key)}>Delete</a>
               </Space>
             ),
@@ -265,6 +264,7 @@ const Category = () => {
           }}
         >
           <Table
+            key={tableKey} 
             columns={columns}
             dataSource={categories}
             expandable={expandable}
@@ -279,9 +279,10 @@ const Category = () => {
         />
 
         <SubCategoryModal
-          isModalOpen={isSubModalOpen}
-          setIsModalOpen={setIsSubModalOpen}
+          isSubModalOpen={isSubModalOpen}
+          setIsSubModalOpen={setIsSubModalOpen}
           handleSubFormSubmit={handleSubFormSubmit}
+          categories={categories}
         />
 
         <SubCatEditModal
