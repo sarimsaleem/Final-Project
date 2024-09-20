@@ -4,7 +4,7 @@ import { MenuFoldOutlined, MenuUnfoldOutlined, UserOutlined, VideoCameraOutlined
 import { useNavigate } from 'react-router-dom';
 import VendorModal from './VendorModal';
 import VendorEditModal from './VendorEditModal';
-import { addVendor, fetchVendors, deleteVendor, updateVendor } from '../Functions/firebaseService'; // Import the updateVendor function
+import { Add, Fetch , Update, Delete } from '../Functions/VendorsFunctions'; 
 
 const { Header, Sider, Content } = Layout;
 
@@ -23,8 +23,8 @@ const Vendor = () => {
 
   // Function to handle adding new vendors
   const handleAddVendor = async (vendor) => {
-    await addVendor(vendor);
-    const updatedVendors = await fetchVendors();
+    await Add(vendor);
+    const updatedVendors = await Fetch();
     setVendors(updatedVendors);
     setOpen(false);
   };
@@ -34,8 +34,8 @@ const Vendor = () => {
     try {
       // Check if selectedVendor has an ID to update
       if (selectedVendor && selectedVendor.id) {
-        await updateVendor(selectedVendor.id, updatedVendor); // Update the vendor in Firebase
-        const updatedVendors = await fetchVendors();
+        await Update(selectedVendor.id, updatedVendor); // Update the vendor in Firebase
+        const updatedVendors = await Fetch();
         setVendors(updatedVendors);
         setEditOpen(false); // Close the modal after successful update
       }
@@ -47,8 +47,8 @@ const Vendor = () => {
   // Function to delete vendors
   const handleDeleteVendor = async (vendorId) => {
     try {
-      await deleteVendor(vendorId);
-      const updatedVendors = await fetchVendors();
+      await Delete(vendorId);
+      const updatedVendors = await Fetch();
       setVendors(updatedVendors);
     } catch (error) {
       console.error('Error deleting vendor:', error);
@@ -57,7 +57,7 @@ const Vendor = () => {
 
   useEffect(() => {
     const loadVendors = async () => {
-      const initialVendors = await fetchVendors();
+      const initialVendors = await Fetch();
       setVendors(initialVendors);
     };
     loadVendors();

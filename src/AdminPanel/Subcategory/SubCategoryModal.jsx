@@ -1,62 +1,81 @@
-
 import React, { useState, useEffect } from 'react';
 import { Modal, Button, Upload, Input, Form as AntForm } from 'antd';
 import { UploadOutlined as UploadIcon } from '@ant-design/icons';
 import { Formik, Field, Form as FormikForm, ErrorMessage } from 'formik';
 import SubCategorySchema from './SubcategorySchema';
 
-const SubCategoryModal = ({ isSubModalOpen, setIsSubModalOpen, handleSubFormSubmit, categories }) => {
+const SubCategoryModal = ({
+  isSubModalOpen,
+  setIsSubModalOpen,
+  handleSubFormSubmit,
+  categories,
+  editingSubItem,
+  setEditingSubItem,
+}) => {
   const [fileList, setFileList] = useState([]);
 
-  // Function to handle closing the modal and resetting the file list
-  const handleModalClose = () => {
-    setIsSubModalOpen(false);
-    setFileList([]); // Reset the file list when the modal is closed
-  };
-
-  // Effect to clear fileList when the modal is opened
   useEffect(() => {
-    if (!isSubModalOpen) {
+    // If editingSubItem exists, pre-fill fileList with existing images
+    if (editingSubItem) {
+      setFileList(
+        editingSubItem.images.map((url, index) => ({
+          uid: index,
+          name: `Image-${index + 1}`,
+          status: 'done',
+          url,
+        }))
+      );
+    } else {
       setFileList([]);
     }
-  }, [isSubModalOpen]);
+  }, [editingSubItem]);
+
+  const handleModalClose = () => {
+    setIsSubModalOpen(false);
+    setFileList([]);
+    setEditingSubItem(null); // Reset editingSubItem when modal is closed
+  };
 
   return (
     <Modal
-      title="Add New SubCategory"
+      title={editingSubItem ? 'Edit SubCategory' : 'Add New SubCategory'}
       open={isSubModalOpen}
       onCancel={handleModalClose}
       footer={null}
     >
       <Formik
-        initialValues={{ categoryKey: '', subCategory: '', images: [] }}
+        initialValues={{
+          categoryId: editingSubItem ? editingSubItem.categoryId : '',
+          name: editingSubItem ? editingSubItem.name : '',
+          images: editingSubItem ? editingSubItem.images : [],
+        }}
         validationSchema={SubCategorySchema}
         onSubmit={(values, { setSubmitting, resetForm }) => {
           handleSubFormSubmit(values);
           setSubmitting(false);
-          resetForm(); // Reset the form fields after submission
-          setFileList([]); // Clear the file list after form submission
+          resetForm();
+          setFileList([]);
         }}
       >
-        {({ setFieldValue, resetForm }) => (
+        {({ setFieldValue }) => (
           <FormikForm>
-            <AntForm.Item label="Category" name="categoryKey">
-              <Field as="select" name="categoryKey">
+            <AntForm.Item label="Category" name="categoryId">
+              <Field as="select" name="categoryId">
                 <option value="">Select Category</option>
                 {categories.map((category) => (
-                  <option key={category.key} value={category.key}>
-                    {category.category}
+                  <option key={category._id} value={category._id}>
+                    {category.name}
                   </option>
                 ))}
               </Field>
-              <ErrorMessage name="categoryKey" component="div" style={{ color: 'red' }} />
+              <ErrorMessage name="categoryId" component="div" style={{ color: 'red' }} />
             </AntForm.Item>
 
-            <AntForm.Item label="SubCategory Name" name="subCategory">
-              <Field name="subCategory">
+            <AntForm.Item label="SubCategory Name" name="name">
+              <Field name="name">
                 {({ field }) => <Input {...field} placeholder="Enter subcategory name" />}
               </Field>
-              <ErrorMessage name="subCategory" component="div" style={{ color: 'red' }} />
+              <ErrorMessage name="name" component="div" style={{ color: 'red' }} />
             </AntForm.Item>
 
             <AntForm.Item label="SubCategory Images" name="images">
@@ -65,12 +84,19 @@ const SubCategoryModal = ({ isSubModalOpen, setIsSubModalOpen, handleSubFormSubm
                 beforeUpload={() => false}
                 fileList={fileList}
                 onChange={({ fileList }) => {
-                  setFileList(fileList); // Update the state with the new file list
-                  setFieldValue('images', fileList.map((file) => file.originFileObj));
+                  setFileList(fileList);
+                  setFieldValue(
+                    'images',
+                    fileList.map((file) => file.originFileObj || file.url)
+                  );
                 }}
-                onRemove={() => {
-                  setFileList([]); // Reset the file list
-                  setFieldValue('images', []); // Clear images from Formik when files are removed
+                onRemove={(file) => {
+                  const updatedFileList = fileList.filter((f) => f.uid !== file.uid);
+                  setFileList(updatedFileList);
+                  setFieldValue(
+                    'images',
+                    updatedFileList.map((file) => file.originFileObj || file.url)
+                  );
                 }}
                 listType="picture"
               >
@@ -81,7 +107,7 @@ const SubCategoryModal = ({ isSubModalOpen, setIsSubModalOpen, handleSubFormSubm
 
             <AntForm.Item>
               <Button type="primary" htmlType="submit">
-                Add SubCategory
+                {editingSubItem ? 'Update SubCategory' : 'Add SubCategory'}
               </Button>
             </AntForm.Item>
           </FormikForm>

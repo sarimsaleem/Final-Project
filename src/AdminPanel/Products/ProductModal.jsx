@@ -1,168 +1,131 @@
-import React, { useState } from 'react';
-import { Modal, Select, Button, Input, Upload, Form as AntForm } from 'antd';
-import { Formik, Form, Field } from 'formik';
-import { UploadOutlined as UploadIcon } from '@ant-design/icons';
-import { productValidationSchema } from './ProductSchema'; // Ensure your schema path is correct
+import React, { useEffect, useState } from 'react';
+import { Modal, Form, Input, Button, Select, Upload } from 'antd';
+import { UploadOutlined } from '@ant-design/icons';
+import { useFormik } from 'formik';
+import * as Yup from 'yup';
+import { productValidationSchema } from './ProductSchema'; // Assuming this path to import the schema
 
 const { Option } = Select;
 
-const ProductModal = ({ open, onClose, onSubmit, categories, subcategories, vendors }) => {
-  const [selectedCategory, setSelectedCategory] = useState('');
-  const [fileList, setFileList] = useState([]);
+const ProductModal = ({ open, onCancel, onAddProduct, categories, subcategories, vendors }) => {
+  // State for selected category and filtered subcategories
+  const [selectedCategory, setSelectedCategory] = useState(null);
+  const [filteredSubcategories, setFilteredSubcategories] = useState([]);
 
-  const handleCategoryChange = (value, setFieldValue) => {
-    setSelectedCategory(value);
-    setFieldValue('category', value);  
-    setFieldValue('subCategory', '');  // Reset subcategory when category changes
-  };
+  // Filter subcategories based on selected category
+  useEffect(() => {
+    if (selectedCategory) {
+      const filtered = subcategories.filter((sub) => sub.categoryKey === selectedCategory);
+      setFilteredSubcategories(filtered);
+    } else {
+      setFilteredSubcategories([]);
+    }
+  }, [selectedCategory, subcategories]);
 
-  const handleUploadChange = ({ fileList }) => {
-    setFileList(fileList);
-  };
+  const formik = useFormik({
+    initialValues: {
+      name: '',
+      category: '',
+      subCategory: '',
+      vendor: '',
+      images: [],
+    },
+    validationSchema: productValidationSchema, // Use the imported schema here
+    onSubmit: (values, { resetForm }) => {
+      onAddProduct(values);
+      resetForm();
+    },
+  });
 
   return (
     <Modal
-      title="Add Product"
       open={open}
-      onCancel={() => {
-        setFileList([]);
-        onClose();
-      }}
-      footer={null}
+      title="Add Product"
+      onCancel={onCancel}
+      footer={[
+        <Button key="back" onClick={onCancel}>
+          Cancel
+        </Button>,
+        <Button key="submit" type="primary" onClick={formik.handleSubmit}>
+          Add Product
+        </Button>,
+      ]}
     >
-      <Formik
-        initialValues={{
-          name: '',
-          category: '',
-          subCategory: '',
-          vendor: '',
-          images: [],
-        }}
-        validationSchema={productValidationSchema}
-        onSubmit={(values, { resetForm }) => {
-          onSubmit({ ...values, images: fileList.map((file) => file.originFileObj) });
-          resetForm(); // Reset the form on submit
-          setFileList([]);
-          onClose();
-        }}
-      >
-        {({ errors, touched, setFieldValue, values }) => (
-          <Form>
-            {/* Product Name */}
-            <AntForm.Item
-              label="Product Name"
-              validateStatus={errors.name && touched.name ? 'error' : ''}
-              help={errors.name && touched.name ? errors.name : ''}
-            >
-              <Field name="name">
-                {({ field }) => (
-                  <Input {...field} placeholder="Enter product name" />
-                )}
-              </Field>
-            </AntForm.Item>
+      <Form layout="vertical">
+        <Form.Item label="Product Name" required>
+          <Input
+            name="name"
+            value={formik.values.name}
+            onChange={formik.handleChange}
+            onBlur={formik.handleBlur}
+          />
+          {formik.touched.name && formik.errors.name ? <div>{formik.errors.name}</div> : null}
+        </Form.Item>
 
-            {/* Category Selection */}
-            <AntForm.Item
-              label="Category"
-              validateStatus={errors.category && touched.category ? 'error' : ''}
-              help={errors.category && touched.category ? errors.category : ''}
-            >
-              <Field name="category">
-                {({ field }) => (
-                  <Select
-                    {...field}
-                    placeholder="Select category"
-                    value={values.category}
-                    onChange={(value) => handleCategoryChange(value, setFieldValue)}
-                  >
-                    {categories.map((category) => (
-                      <Option key={category.key} value={category.key}>
-                        {category.category}
-                      </Option>
-                    ))}
-                  </Select>
-                )}
-              </Field>
-            </AntForm.Item>
+        <Form.Item label="Category" required>
+          <Select
+            value={formik.values.category}
+            onChange={(value) => {
+              formik.setFieldValue('category', value);
+              setSelectedCategory(value);
+            }}
+          >
+            {categories.map((category) => (
+              <Option key={category.key} value={category.key}>
+                {category.name}
+              </Option>
+            ))}
+          </Select>
+          {formik.touched.category && formik.errors.category ? <div>{formik.errors.category}</div> : null}
+        </Form.Item>
 
-            {/* Subcategory Selection (Filtered by Selected Category) */}
-            <AntForm.Item
-              label="Subcategory"
-              validateStatus={errors.subCategory && touched.subCategory ? 'error' : ''}
-              help={errors.subCategory && touched.subCategory ? errors.subCategory : ''}
-            >
-              <Field name="subCategory">
-                {({ field }) => (
-                  <Select
-                    {...field}
-                    placeholder="Select subcategory"
-                    value={values.subCategory}
-                    onChange={(value) => setFieldValue('subCategory', value)}
-                    disabled={!selectedCategory}  // Disable dropdown if no category is selected
-                  >
-                    {subcategories
-                      .filter((sc) => sc.categoryKey === selectedCategory) // Filter based on selected category
-                      .map((subcategory) => (
-                        <Option key={subcategory.key} value={subcategory.key}>
-                          {subcategory.subCategory}
-                        </Option>
-                      ))}
-                  </Select>
-                )}
-              </Field>
-            </AntForm.Item>
+        <Form.Item label="Subcategory" required>
+          <Select
+            value={formik.values.subCategory}
+            onChange={(value) => formik.setFieldValue('subCategory', value)}
+            disabled={!selectedCategory}
+          >
+            {filteredSubcategories.map((sub) => (
+              <Option key={sub.key} value={sub.key}>
+                {sub.name}
+              </Option>
+            ))}
+          </Select>
+          {formik.touched.subCategory && formik.errors.subCategory ? <div>{formik.errors.subCategory}</div> : null}
+        </Form.Item>
 
-            {/* Vendor Selection */}
-            <AntForm.Item
-              label="Vendor"
-              validateStatus={errors.vendor && touched.vendor ? 'error' : ''}
-              help={errors.vendor && touched.vendor ? errors.vendor : ''}
-            >
-              <Field name="vendor">
-                {({ field }) => (
-                  <Select
-                    {...field}
-                    placeholder="Select vendor"
-                    value={values.vendor}
-                    onChange={(value) => setFieldValue('vendor', value)}
-                  >
-                    {vendors.map((vendor, index) => (
-                      <Option key={index} value={vendor}>
-                        {vendor}
-                      </Option>
-                    ))}
-                  </Select>
-                )}
-              </Field>
-            </AntForm.Item>
+        <Form.Item label="Vendor" required>
+          <Select
+            value={formik.values.vendor}
+            onChange={(value) => formik.setFieldValue('vendor', value)}
+          >
+            {vendors.map((vendor) => (
+              <Option key={vendor} value={vendor}>
+                {vendor}
+              </Option>
+            ))}
+          </Select>
+          {formik.touched.vendor && formik.errors.vendor ? <div>{formik.errors.vendor}</div> : null}
+        </Form.Item>
 
-            {/* Image Upload */}
-            <AntForm.Item
-              label="Images"
-              validateStatus={errors.images && touched.images ? 'error' : ''}
-              help={errors.images && touched.images ? errors.images : ''}
-            >
-              <Upload
-                listType="picture"
-                fileList={fileList}
-                beforeUpload={() => false}  // Prevent automatic upload
-                onChange={handleUploadChange}
-                accept="image/*"
-                multiple
-              >
-                <Button icon={<UploadIcon />}>Upload Images</Button>
-              </Upload>
-            </AntForm.Item>
-
-            {/* Submit Button */}
-            <AntForm.Item>
-              <Button type="primary" htmlType="submit">
-                Submit
-              </Button>
-            </AntForm.Item>
-          </Form>
-        )}
-      </Formik>
+        <Form.Item label="Images">
+          <Upload
+            multiple
+            listType="picture"
+            beforeUpload={(file) => {
+              formik.setFieldValue('images', [...formik.values.images, file]); // Store file objects
+              return false; // Prevents default upload behavior
+            }}
+            onRemove={(file) => {
+              const newImages = formik.values.images.filter((img) => img !== file);
+              formik.setFieldValue('images', newImages);
+            }}
+          >
+            <Button icon={<UploadOutlined />}>Upload Images</Button>
+          </Upload>
+          {formik.touched.images && formik.errors.images ? <div>{formik.errors.images}</div> : null}
+        </Form.Item>
+      </Form>
     </Modal>
   );
 };

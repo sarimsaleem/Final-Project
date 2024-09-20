@@ -8,7 +8,7 @@ import 'bootstrap/dist/css/bootstrap.min.css';
 // import Footer from "./Componentss/Footer/Footer";
 // import ForgetPassword from "./Componentss/Login/forgetPassword";
 
-import Product from "../src/AdminPanel/Products/Product"
+import Product from "./AdminPanel/Products/Product"
 import Category from './AdminPanel/Category/Category';
 import Vendor from "./AdminPanel/Vendors/Vendor";
 function App() {
